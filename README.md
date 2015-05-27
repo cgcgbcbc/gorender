@@ -1,5 +1,8 @@
 # gorender
 
+[![Build Status](https://travis-ci.org/cgcgbcbc/gorender.svg?branch=master)](https://travis-ci.org/cgcgbcbc/gorender)
+[![Coverage Status](https://coveralls.io/repos/cgcgbcbc/gorender/badge.svg?branch=master)](https://coveralls.io/r/cgcgbcbc/gorender?branch=master)
+
 Render go template on the fly
 
 ## Install
