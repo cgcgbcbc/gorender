@@ -2,6 +2,7 @@ GOCMD=go
 GOBUILD=$(GOCMD) build
 GOTEST=$(GOCMD) test
 GOCLEAN=$(GOCMD) clean
+GOINSTALL=$(GOCMD) install
 GOCOV=gocov
 GOCOVREPORT=$(GOCOV) test | gocov-html > cover.html
 
@@ -18,3 +19,6 @@ clean:
 
 cover:
 	$(GOCOVREPORT)
+
+install:
+	$(GOINSTALL)
