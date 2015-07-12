@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 	"text/template"
+	"path/filepath"
 )
 
 const templateStringErrorTemplate = `
@@ -51,27 +52,41 @@ func main() {
 	}
 
 	app.Action = action
+	app.Commands = []cli.Command{
+		{
+			Name: "csv",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name: "data-path",
+				},
+			},
+			Action: csvRender,
+		},
+	}
 	app.Run(os.Args)
 }
 
-func renderStringTemplate(templateString string, data map[string]string) (err error) {
-	tmpl, err := template.New("").Parse(templateString)
+func getTemplate(c *cli.Context) (t *template.Template) {
+	templateString := c.GlobalString("string")
+	templatePath := c.GlobalString("path")
+	err := validateParameter(templateString, templatePath)
 	if err != nil {
-		return
+		log.Fatal(err)
 	}
-	return render(tmpl, data)
+
+	if templateString != "" {
+		return template.Must(template.New("").Funcs(helper).Parse(templateString))
+	}
+
+	if templatePath != "" {
+		return template.Must(template.New(filepath.Base(templatePath)).Funcs(helper).ParseFiles(templatePath))
+	}
+
+	return
 }
 
-func renderFileTemplate(templatePath string, data map[string]string) (err error) {
-	tmpl, err := template.ParseFiles(templatePath)
-	if err != nil {
-		return
-	}
-	return render(tmpl, data)
-}
-
-func render(t *template.Template, data map[string]string) (err error) {
-	err = t.Execute(os.Stdout, data)
+func render(t *template.Template, data map[string]string, out *os.File) (err error) {
+	err = t.Execute(out, data)
 	return
 }
 
@@ -102,27 +117,13 @@ func constructData(data *map[string]string, args cli.Args) (err error) {
 }
 
 func action(c *cli.Context) {
-	templateString := c.String("string")
-	templatePath := c.String("path")
-	err := validateParameter(templateString, templatePath)
-	if err != nil {
-		log.Fatalf("parameter is invalid, reason: %s", err)
-	}
+	t := getTemplate(c)
+
 	data := map[string]string{}
-	err = constructData(&data, c.Args())
+	err := constructData(&data, c.Args())
 	if err != nil {
 		log.Fatalf("data is invalid, reason: %s", err)
 	}
-	if templateString != "" {
-		err := renderStringTemplate(templateString, data)
-		if err != nil {
-			log.Fatalf(templateStringErrorTemplate, templateString, data, err)
-		}
-	}
-	if templatePath != "" {
-		err := renderFileTemplate(templatePath, data)
-		if err != nil {
-			log.Fatalf(templateFileErrorTemplate, templatePath, data, err)
-		}
-	}
+
+	render(t, data, os.Stdout)
 }
